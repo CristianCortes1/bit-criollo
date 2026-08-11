@@ -18,6 +18,7 @@ export interface ArticleVersionItem {
 export interface ArticleItem {
   id: string;
   name: string;
+  category?: string | null;
   createdAt: string;
   updatedAt: string;
   versions: ArticleVersionItem[];
@@ -112,6 +113,11 @@ export default function VersionHistoryModal({ article, onClose, onRefresh }: Ver
                 <p className="text-xs text-slate-400">
                   Historial completo de versiones ({versions.length} versión{versions.length === 1 ? '' : 'es'})
                 </p>
+                {article.category && (
+                  <p className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                    {article.category}
+                  </p>
+                )}
               </div>
             </div>
             <button

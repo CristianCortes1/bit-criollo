@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const rawName = formData.get('name') as string | null;
+    const rawCategory = formData.get('category') as string | null;
     const rawVersion = formData.get('version') as string | null;
     const rawAuthor = formData.get('author') as string | null;
 
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
     }
 
     const name = rawName.trim();
+  const category = rawCategory?.trim() || null;
     const versionStr = rawVersion.trim();
     const author = rawAuthor.trim();
 
@@ -134,6 +136,7 @@ export async function POST(req: NextRequest) {
           where: { id: existingArticle.id },
           data: {
             updatedAt: new Date(),
+            category: category ?? existingArticle.category,
             versions: {
               create: {
                 fileUrl,
@@ -156,6 +159,7 @@ export async function POST(req: NextRequest) {
         article = await prisma.article.create({
           data: {
             name,
+            category,
             versions: {
               create: {
                 fileUrl,
@@ -199,12 +203,14 @@ export async function POST(req: NextRequest) {
       let resultArticle;
       if (existingIndex >= 0) {
         articles[existingIndex].updatedAt = nowIso;
+        articles[existingIndex].category = category ?? articles[existingIndex].category ?? null;
         articles[existingIndex].versions.unshift(newVersionObj);
         resultArticle = articles[existingIndex];
       } else {
         resultArticle = {
           id: `art-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           name,
+          category,
           createdAt: nowIso,
           updatedAt: nowIso,
           versions: [newVersionObj],

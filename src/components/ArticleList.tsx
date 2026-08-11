@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Search, Download, History, FileText, User, Calendar, PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import VersionHistoryModal, { ArticleItem } from './VersionHistoryModal';
 import ConfirmModal from './ConfirmModal';
@@ -14,6 +14,7 @@ interface ArticleListProps {
 
 export default function ArticleList({ articles, isLoading, onOpenUpload, onRefresh }: ArticleListProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedArticleHistory, setSelectedArticleHistory] = useState<ArticleItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmArticle, setConfirmArticle] = useState<ArticleItem | null>(null);
@@ -37,13 +38,31 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
     }
   };
 
+  const categoryOptions = useMemo(() => {
+    const categories = Array.from(
+      new Set(
+        articles
+          .map((article) => article.category?.trim())
+          .filter((category): category is string => Boolean(category))
+      )
+    ).sort((a, b) => a.localeCompare(b, 'es'));
+
+    return categories;
+  }, [articles]);
+
   const filteredArticles = articles.filter((art) => {
     const q = searchQuery.toLowerCase();
     const latestVersion = art.versions?.[0];
+    const category = art.category?.trim() || '';
+    const matchesCategory = selectedCategory === 'all' || category === selectedCategory;
     return (
-      art.name.toLowerCase().includes(q) ||
-      (latestVersion?.author && latestVersion.author.toLowerCase().includes(q)) ||
-      (latestVersion?.version && latestVersion.version.toLowerCase().includes(q))
+      matchesCategory &&
+      (
+        art.name.toLowerCase().includes(q) ||
+        (latestVersion?.author && latestVersion.author.toLowerCase().includes(q)) ||
+        (latestVersion?.version && latestVersion.version.toLowerCase().includes(q)) ||
+        (category && category.toLowerCase().includes(q))
+      )
     );
   });
 
@@ -64,32 +83,56 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
     <div className="space-y-6">
       
       {/* Top Bar: Search & Action */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
-        
-        {/* Search Box */}
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por artículo, autor o versión..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-criollo-500 focus:ring-1 focus:ring-criollo-500 transition-all"
-          />
+      <div className="flex flex-col gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
+          <div className="relative w-full lg:w-80">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por artículo, autor, versión o categoría..."
+              className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-criollo-500 focus:ring-1 focus:ring-criollo-500 transition-all"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto lg:justify-end">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full sm:w-56 px-3.5 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-criollo-500 focus:ring-1 focus:ring-criollo-500 transition-all"
+            >
+              <option value="all">Todas las categorías</option>
+              {categoryOptions.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={onOpenUpload}
+              className="flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-criollo-600/20 hover:bg-criollo-600/30 text-criollo-300 border border-criollo-500/30 rounded-xl text-xs font-semibold transition-all"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Nuevo Artículo</span>
+            </button>
+          </div>
         </div>
 
-        {/* Counter & Upload CTA */}
-        <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+        <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-semibold text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
             {filteredArticles.length} artículo{filteredArticles.length === 1 ? '' : 's'} disponible{filteredArticles.length === 1 ? '' : 's'}
           </span>
-          <button
-            onClick={onOpenUpload}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-criollo-600/20 hover:bg-criollo-600/30 text-criollo-300 border border-criollo-500/30 rounded-xl text-xs font-semibold transition-all"
-          >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>Nuevo Artículo</span>
-          </button>
+          {selectedCategory !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className="text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+            >
+              Limpiar filtro de categoría
+            </button>
+          )}
         </div>
 
       </div>
@@ -146,9 +189,16 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                 {/* Header section */}
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-base font-bold text-slate-100 group-hover:text-criollo-300 transition-colors line-clamp-2">
-                      {article.name}
-                    </h3>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-slate-100 group-hover:text-criollo-300 transition-colors line-clamp-2">
+                        {article.name}
+                      </h3>
+                      {article.category && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                          {article.category}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {latestVer?.version && (
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-criollo-500/15 text-criollo-300 border border-criollo-500/30">

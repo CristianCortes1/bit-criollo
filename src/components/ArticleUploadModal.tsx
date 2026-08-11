@@ -18,6 +18,7 @@ export default function ArticleUploadModal({
 }: ArticleUploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
   const [version, setVersion] = useState('v1.0');
   const [author, setAuthor] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -85,6 +86,10 @@ export default function ArticleUploadModal({
       setErrorMsg('Ingresa el nombre del artículo.');
       return;
     }
+    if (!category.trim()) {
+      setErrorMsg('Ingresa una categoría o fase para el artículo.');
+      return;
+    }
     if (!version.trim()) {
       setErrorMsg('Ingresa la versión (ej. v1.0).');
       return;
@@ -100,6 +105,7 @@ export default function ArticleUploadModal({
       const formData = new FormData();
       formData.append('file', file);
       formData.append('name', name.trim());
+      formData.append('category', category.trim());
       formData.append('version', version.trim());
       formData.append('author', author.trim());
 
@@ -124,6 +130,7 @@ export default function ArticleUploadModal({
         // Reset state & close
         setFile(null);
         setName('');
+          setCategory('');
         setVersion('v1.0');
         setAuthor('');
         setSuccessMsg(null);
@@ -235,6 +242,20 @@ export default function ArticleUploadModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                Categoría o Fase <span className="text-criollo-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Ej. Planeación, Fase 1, Evaluación"
+                required
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-criollo-500 focus:ring-1 focus:ring-criollo-500 transition-colors"
+              />
+            </div>
                   Versión <span className="text-criollo-400">*</span>
                 </label>
                 <input
