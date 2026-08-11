@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { MouseEvent, useState } from 'react';
 import { Download, Search, FolderArchive, Tag, Trash2, PlusCircle, Loader2 } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 
@@ -46,6 +46,12 @@ export default function TemplateList({
 
     return matchesSearch && matchesCategory;
   });
+
+  const handleOpenDeleteConfirm = (template: TemplateItem, event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setConfirmTemplate(template);
+  };
 
   const handleDelete = async () => {
     if (!confirmTemplate) return;
@@ -175,7 +181,8 @@ export default function TemplateList({
                       
                       {/* Delete action */}
                       <button
-                        onClick={() => setConfirmTemplate(template)}
+                        type="button"
+                        onClick={(event) => handleOpenDeleteConfirm(template, event)}
                         disabled={isDeleting}
                         title="Eliminar plantilla"
                         className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
