@@ -129,6 +129,7 @@ export default function Home() {
               articles={articles}
               isLoading={isLoadingArticles}
               onOpenUpload={() => setIsArticleUploadOpen(true)}
+              onRefresh={fetchArticles}
             />
           ) : (
             <TemplateList

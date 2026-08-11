@@ -25,15 +25,14 @@ export default function Header({
           
           {/* Logo & Identity */}
           <div className="flex items-center space-x-3.5">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-criollo-500 to-brand-accent rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-300"></div>
-              <div className="relative bg-slate-900 border border-slate-700/60 rounded-xl p-1.5 flex items-center justify-center">
+            <div className="relative group w-12 h-12">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-criollo-500 to-brand-accent rounded-full blur-sm opacity-50 group-hover:opacity-80 transition duration-300"></div>
+              <div className="relative w-12 h-12 rounded-full overflow-hidden border border-slate-700/60">
                 <Image
                   src="/images/logo.png"
                   alt="Bit Criollo Logo"
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 object-contain rounded-lg"
+                  fill
+                  className="object-cover"
                   priority
                 />
               </div>

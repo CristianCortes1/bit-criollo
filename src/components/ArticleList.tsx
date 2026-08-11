@@ -1,18 +1,41 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Download, History, FileText, User, Calendar, PlusCircle, Sparkles } from 'lucide-react';
+import { Search, Download, History, FileText, User, Calendar, PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import VersionHistoryModal, { ArticleItem } from './VersionHistoryModal';
+import ConfirmModal from './ConfirmModal';
 
 interface ArticleListProps {
   articles: ArticleItem[];
   isLoading: boolean;
   onOpenUpload: () => void;
+  onRefresh: () => void;
 }
 
-export default function ArticleList({ articles, isLoading, onOpenUpload }: ArticleListProps) {
+export default function ArticleList({ articles, isLoading, onOpenUpload, onRefresh }: ArticleListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedArticleHistory, setSelectedArticleHistory] = useState<ArticleItem | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmArticle, setConfirmArticle] = useState<ArticleItem | null>(null);
+
+  const handleDelete = async () => {
+    if (!confirmArticle) return;
+    setDeletingId(confirmArticle.id);
+    try {
+      const res = await fetch(`/api/articles/${confirmArticle.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setConfirmArticle(null);
+        onRefresh();
+      } else {
+        const data = await res.json();
+        console.error(data.error || 'Error al eliminar el artículo.');
+      }
+    } catch (err) {
+      console.error('Error al eliminar artículo:', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filteredArticles = articles.filter((art) => {
     const q = searchQuery.toLowerCase();
@@ -126,11 +149,25 @@ export default function ArticleList({ articles, isLoading, onOpenUpload }: Artic
                     <h3 className="text-base font-bold text-slate-100 group-hover:text-criollo-300 transition-colors line-clamp-2">
                       {article.name}
                     </h3>
-                    {latestVer?.version && (
-                      <span className="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold bg-criollo-500/15 text-criollo-300 border border-criollo-500/30">
-                        {latestVer.version}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {latestVer?.version && (
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-criollo-500/15 text-criollo-300 border border-criollo-500/30">
+                          {latestVer.version}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => setConfirmArticle(article)}
+                        disabled={deletingId === article.id}
+                        title="Eliminar artículo"
+                        className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      >
+                        {deletingId === article.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Metadata info */}
@@ -188,6 +225,18 @@ export default function ArticleList({ articles, isLoading, onOpenUpload }: Artic
       <VersionHistoryModal
         article={selectedArticleHistory}
         onClose={() => setSelectedArticleHistory(null)}
+        onRefresh={onRefresh}
+      />
+
+      {/* Confirm Delete Article Modal */}
+      <ConfirmModal
+        isOpen={!!confirmArticle}
+        title="¿Eliminar artículo?"
+        message={`Estás a punto de eliminar "${confirmArticle?.name}" y todo su historial de versiones. Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, eliminar artículo"
+        isLoading={deletingId === confirmArticle?.id}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmArticle(null)}
       />
     </div>
   );

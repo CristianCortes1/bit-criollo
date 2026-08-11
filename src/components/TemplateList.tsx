@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Download, Search, FolderArchive, Tag, Trash2, PlusCircle, Loader2 } from 'lucide-react';
+import ConfirmModal from './ConfirmModal';
 
 export interface TemplateItem {
   id: string;
@@ -30,6 +31,7 @@ export default function TemplateList({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmTemplate, setConfirmTemplate] = useState<TemplateItem | null>(null);
 
   // Get unique categories
   const categories = ['Todos', ...Array.from(new Set(templates.map((t) => t.category)))];
@@ -45,29 +47,31 @@ export default function TemplateList({
     return matchesSearch && matchesCategory;
   });
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar la plantilla "${name}"?`)) return;
-
+  const handleDelete = async () => {
+    if (!confirmTemplate) return;
+    const id = confirmTemplate.id;
+    const name = confirmTemplate.name;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/plantillas/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
+        setConfirmTemplate(null);
         onRefresh();
       } else {
         const data = await res.json();
-        alert(data.error || 'Error al eliminar la plantilla.');
+        console.error(data.error || 'Error al eliminar la plantilla.');
       }
     } catch (err) {
       console.error('Error al eliminar plantilla:', err);
-      alert('Error al intentar eliminar la plantilla.');
     } finally {
       setDeletingId(null);
     }
   };
 
   return (
+    <>
     <div className="space-y-6">
       
       {/* Header controls & Filter */}
@@ -171,7 +175,7 @@ export default function TemplateList({
                       
                       {/* Delete action */}
                       <button
-                        onClick={() => handleDelete(template.id, template.name)}
+                        onClick={() => setConfirmTemplate(template)}
                         disabled={isDeleting}
                         title="Eliminar plantilla"
                         className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
@@ -218,5 +222,18 @@ export default function TemplateList({
       )}
 
     </div>
+
+      {/* Confirm Delete Template Modal */}
+      <ConfirmModal
+        isOpen={!!confirmTemplate}
+        title="¿Eliminar plantilla?"
+        message={`Estás a punto de eliminar la plantilla "${confirmTemplate?.name}". Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, eliminar plantilla"
+        isLoading={deletingId === confirmTemplate?.id}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmTemplate(null)}
+      />
+    </>
   );
 }
+
