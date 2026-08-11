@@ -1,41 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Download, Search, FolderArchive, Tag } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Search, FolderArchive, Tag, Trash2, PlusCircle, Loader2 } from 'lucide-react';
 
 export interface TemplateItem {
   id: string;
   name: string;
   description: string;
   category: string;
-  file: string;
+  fileUrl?: string;
+  file?: string;
+  createdAt?: string;
   updatedAt?: string;
 }
 
-export default function TemplateList() {
-  const [templates, setTemplates] = useState<TemplateItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface TemplateListProps {
+  onOpenUpload: () => void;
+  templates: TemplateItem[];
+  isLoading: boolean;
+  onRefresh: () => void;
+}
+
+export default function TemplateList({
+  onOpenUpload,
+  templates,
+  isLoading,
+  onRefresh,
+}: TemplateListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
-
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  const fetchTemplates = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/plantillas');
-      if (res.ok) {
-        const data = await res.json();
-        setTemplates(data);
-      }
-    } catch (err) {
-      console.error('Error al cargar plantillas:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Get unique categories
   const categories = ['Todos', ...Array.from(new Set(templates.map((t) => t.category)))];
@@ -51,23 +45,43 @@ export default function TemplateList() {
     return matchesSearch && matchesCategory;
   });
 
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`¿Estás seguro de que deseas eliminar la plantilla "${name}"?`)) return;
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/plantillas/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        onRefresh();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Error al eliminar la plantilla.');
+      }
+    } catch (err) {
+      console.error('Error al eliminar plantilla:', err);
+      alert('Error al intentar eliminar la plantilla.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       
-
-
-      {/* Filter and Search controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
+      {/* Header controls & Filter */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
         
         {/* Category Pills */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 custom-scrollbar">
+        <div className="flex items-center space-x-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 custom-scrollbar">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                 selectedCategory === cat
-                  ? 'bg-criollo-600 text-white shadow-md shadow-criollo-600/25'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
                   : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
               }`}
             >
@@ -76,16 +90,26 @@ export default function TemplateList() {
           ))}
         </div>
 
-        {/* Search Input */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar plantilla..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-criollo-500 focus:ring-1 focus:ring-criollo-500 transition-all"
-          />
+        {/* Right side controls: Search & Upload button */}
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar plantilla..."
+              className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+            />
+          </div>
+
+          <button
+            onClick={onOpenUpload}
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/25 transition-all transform hover:-translate-y-0.5 whitespace-nowrap"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Subir Plantilla</span>
+          </button>
         </div>
 
       </div>
@@ -102,59 +126,94 @@ export default function TemplateList() {
           ))}
         </div>
       ) : filteredTemplates.length === 0 ? (
-        <div className="glass-panel rounded-2xl p-12 text-center border border-slate-800 space-y-3 max-w-md mx-auto my-8">
-          <FolderArchive className="w-10 h-10 mx-auto text-slate-500" />
-          <h3 className="text-base font-bold text-slate-100">No se encontraron plantillas</h3>
-          <p className="text-xs text-slate-400">
-            Intenta cambiar el filtro de categoría o borrar la búsqueda.
-          </p>
+        <div className="glass-panel rounded-2xl p-12 text-center border border-slate-800 space-y-4 max-w-md mx-auto my-8">
+          <FolderArchive className="w-12 h-12 mx-auto text-slate-500" />
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-slate-100">No hay plantillas registradas</h3>
+            <p className="text-xs text-slate-400">
+              {searchQuery || selectedCategory !== 'Todos'
+                ? 'Intenta cambiar el filtro de categoría o borrar la búsqueda.'
+                : 'Sube la primera plantilla oficial utilizando el botón de arriba.'}
+            </p>
+          </div>
+          <button
+            onClick={onOpenUpload}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md transition-all"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Subir Plantilla Ahora</span>
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredTemplates.map((template) => (
-            <div
-              key={template.id}
-              className="glass-card rounded-2xl p-5 border flex flex-col justify-between space-y-4 group"
-            >
-              <div className="space-y-3">
-                
-                {/* Category Badge & Title */}
-                <div className="flex items-start justify-between gap-2">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <Tag className="w-3 h-3 mr-1" />
-                    {template.category}
-                  </span>
-                  <span className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 bg-slate-800 text-slate-400 rounded">
-                    .DOCX
-                  </span>
+          {filteredTemplates.map((template) => {
+            const downloadUrl = template.fileUrl || template.file || '#';
+            const isDeleting = deletingId === template.id;
+
+            return (
+              <div
+                key={template.id}
+                className="glass-card rounded-2xl p-5 border border-slate-800/80 flex flex-col justify-between space-y-4 group hover:border-slate-700 transition-all"
+              >
+                <div className="space-y-3">
+                  
+                  {/* Category Badge, File format & Delete Button */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <Tag className="w-3 h-3 mr-1" />
+                      {template.category}
+                    </span>
+
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 bg-slate-800 text-slate-400 rounded">
+                        Documento
+                      </span>
+                      
+                      {/* Delete action */}
+                      <button
+                        onClick={() => handleDelete(template.id, template.name)}
+                        disabled={isDeleting}
+                        title="Eliminar plantilla"
+                        className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base font-bold text-slate-100 group-hover:text-emerald-300 transition-colors">
+                      {template.name}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed line-clamp-3">
+                      {template.description || 'Sin descripción'}
+                    </p>
+                  </div>
+
                 </div>
 
-                <div>
-                  <h3 className="text-base font-bold text-slate-100 group-hover:text-criollo-300 transition-colors">
-                    {template.name}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed line-clamp-3">
-                    {template.description}
-                  </p>
+                {/* Download Action */}
+                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-500">
+                    {template.createdAt ? new Date(template.createdAt).toLocaleDateString() : 'Oficial'}
+                  </span>
+                  
+                  <a
+                    href={downloadUrl}
+                    download
+                    className="inline-flex items-center space-x-2 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/25 transition-all transform hover:-translate-y-0.5"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Descargar</span>
+                  </a>
                 </div>
-
               </div>
-
-              {/* Download Action */}
-              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                <span className="text-xs text-slate-500 font-mono">Formato Word</span>
-                
-                <a
-                  href={template.file}
-                  download
-                  className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/25 transition-all transform hover:-translate-y-0.5"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Descargar Plantilla</span>
-                </a>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

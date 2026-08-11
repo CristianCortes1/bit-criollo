@@ -3,16 +3,22 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import ArticleList from '@/components/ArticleList';
-import TemplateList from '@/components/TemplateList';
+import TemplateList, { TemplateItem } from '@/components/TemplateList';
 import ArticleUploadModal from '@/components/ArticleUploadModal';
+import TemplateUploadModal from '@/components/TemplateUploadModal';
 import { ArticleItem } from '@/components/VersionHistoryModal';
 import { FileText, FolderArchive, Layers, Heart } from 'lucide-react';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'articles' | 'templates'>('articles');
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isArticleUploadOpen, setIsArticleUploadOpen] = useState(false);
+  const [isTemplateUploadOpen, setIsTemplateUploadOpen] = useState(false);
+
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [isLoadingArticles, setIsLoadingArticles] = useState(true);
+
+  const [templates, setTemplates] = useState<TemplateItem[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
 
   const fetchArticles = async () => {
     setIsLoadingArticles(true);
@@ -29,8 +35,24 @@ export default function Home() {
     }
   };
 
+  const fetchTemplates = async () => {
+    setIsLoadingTemplates(true);
+    try {
+      const res = await fetch('/api/plantillas');
+      if (res.ok) {
+        const data = await res.json();
+        setTemplates(data);
+      }
+    } catch (err) {
+      console.error('Error al cargar plantillas:', err);
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  };
+
   useEffect(() => {
     fetchArticles();
+    fetchTemplates();
   }, []);
 
   const existingArticleNames = articles.map((a) => a.name);
@@ -42,7 +64,8 @@ export default function Home() {
         <Header
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          onOpenUpload={() => setIsUploadOpen(true)}
+          onOpenUpload={() => setIsArticleUploadOpen(true)}
+          onOpenTemplateUpload={() => setIsTemplateUploadOpen(true)}
         />
 
         {/* Main Content Body */}
@@ -66,7 +89,7 @@ export default function Home() {
                 <p className="text-sm text-slate-300 leading-relaxed">
                   {activeTab === 'articles'
                     ? 'Sube documentos (.docx, PDF e imágenes), consulta la versión más reciente o revisa el historial completo de versiones de cualquier artículo del equipo.'
-                    : 'Descarga plantillas estandarizadas de actas de reunión, bitácoras y reportes para diligenciarlas en Word.'}
+                    : 'Sube y descarga plantillas estandarizadas de actas de reunión, bitácoras y reportes para el equipo Bit Criollo.'}
                 </p>
               </div>
 
@@ -88,12 +111,12 @@ export default function Home() {
                   onClick={() => setActiveTab('templates')}
                   className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
                     activeTab === 'templates'
-                      ? 'bg-criollo-600 text-white shadow-lg shadow-criollo-600/30'
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
                   <FolderArchive className="w-4 h-4" />
-                  <span>Plantillas</span>
+                  <span>{templates.length} Plantillas</span>
                 </button>
               </div>
 
@@ -105,21 +128,32 @@ export default function Home() {
             <ArticleList
               articles={articles}
               isLoading={isLoadingArticles}
-              onOpenUpload={() => setIsUploadOpen(true)}
+              onOpenUpload={() => setIsArticleUploadOpen(true)}
             />
           ) : (
-            <TemplateList />
+            <TemplateList
+              templates={templates}
+              isLoading={isLoadingTemplates}
+              onOpenUpload={() => setIsTemplateUploadOpen(true)}
+              onRefresh={fetchTemplates}
+            />
           )}
 
         </main>
       </div>
 
-      {/* Upload Modal */}
+      {/* Upload Modals */}
       <ArticleUploadModal
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
+        isOpen={isArticleUploadOpen}
+        onClose={() => setIsArticleUploadOpen(false)}
         onSuccess={fetchArticles}
         existingArticleNames={existingArticleNames}
+      />
+
+      <TemplateUploadModal
+        isOpen={isTemplateUploadOpen}
+        onClose={() => setIsTemplateUploadOpen(false)}
+        onSuccess={fetchTemplates}
       />
 
       {/* Footer */}
