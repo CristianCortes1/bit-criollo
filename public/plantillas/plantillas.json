@@ -1,0 +1,34 @@
+[
+  {
+    "id": "acta-reunion-bit-criollo",
+    "name": "Acta de Reunión General",
+    "description": "Plantilla oficial para registrar la asistencia, orden del día, acuerdos alcanzados y tareas asignadas durante las reuniones del equipo Bit Criollo.",
+    "category": "Actas",
+    "file": "/plantillas/acta_de_reunion_bit_criollo.docx",
+    "updatedAt": "2026-08-10"
+  },
+  {
+    "id": "bitacora-desarrollo-proyecto",
+    "name": "Bitácora de Desarrollo",
+    "description": "Formato estandarizado para documentar avances diarios, desafíos técnicos superados, refactorizaciones e hitos del proyecto.",
+    "category": "Bitácoras",
+    "file": "/plantillas/bitacora_de_desarrollo_bit_criollo.docx",
+    "updatedAt": "2026-08-10"
+  },
+  {
+    "id": "reporte-incidencias-tecnicas",
+    "name": "Reporte de Incidencias y Bugs",
+    "description": "Plantilla para reportar fallos en producción, pasos para reproducir, severidad y plan de corrección o mitigación inmediata.",
+    "category": "Reportes",
+    "file": "/plantillas/reporte_incidencias_bit_criollo.docx",
+    "updatedAt": "2026-08-10"
+  },
+  {
+    "id": "propuesta-arquitectura-tecnica",
+    "name": "Documento de Arquitectura y RFC",
+    "description": "Estructura base para presentar propuestas de diseño de software, diagramas, tecnologías a adoptar y análisis de costos/beneficios.",
+    "category": "Arquitectura",
+    "file": "/plantillas/propuesta_arquitectura_bit_criollo.docx",
+    "updatedAt": "2026-08-10"
+  }
+]
