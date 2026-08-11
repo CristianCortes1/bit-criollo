@@ -98,10 +98,10 @@ Crea un archivo `.env` en la raíz del proyecto tomando como referencia `.env.ex
 DATABASE_URL="postgresql://postgres:contraseña@localhost:5432/bit_criollo_docs"
 
 # Token de Vercel Blob (Opcional en desarrollo local, requerido en producción)
-BLOB_READ_WRITE_TOKEN="vercel_blob_rw_..."
+BitCriolloBlob_READ_WRITE_TOKEN="vercel_blob_rw_..."
 ```
 
-> **Nota:** Si en desarrollo local no configuras un `BLOB_READ_WRITE_TOKEN` o la base de datos PostgreSQL no está iniciada, la aplicación utilizará automáticamente el **sistema de fallback en disco local** (`public/uploads/`) para que puedas probar la aplicación sin interrupciones.
+> **Nota:** Si en desarrollo local no configuras un `BitCriolloBlob_READ_WRITE_TOKEN` o la base de datos PostgreSQL no está iniciada, la aplicación utilizará automáticamente el **sistema de fallback en disco local** (`public/uploads/`) para que puedas probar la aplicación sin interrupciones.
 
 ### 4. Generar Cliente de Prisma y sincronizar la base de datos
 ```bash
@@ -141,10 +141,10 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 1. Sube el proyecto a tu repositorio en GitHub / GitLab.
 2. Importa el proyecto en [Vercel](https://vercel.com).
-3. En la configuración del proyecto en Vercel, agrega la sección de **Storage > Blob** para obtener el token `BLOB_READ_WRITE_TOKEN`.
+3. En la configuración del proyecto en Vercel, agrega la sección de **Storage > Blob** para obtener el token `BitCriolloBlob_READ_WRITE_TOKEN`.
 4. En **Environment Variables**, configura:
    - `DATABASE_URL`: La URL de conexión a tu PostgreSQL en Supabase, Vercel Postgres o Neon.
-   - `BLOB_READ_WRITE_TOKEN`: El token del Storage Vercel Blob.
+   - `BitCriolloBlob_READ_WRITE_TOKEN`: El token del Storage Vercel Blob.
 5. Vercel ejecutará automáticamente `npm run build` (el cual incluye `prisma generate`) y tu aplicación estará disponible globalmente.
 
 ---

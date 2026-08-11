@@ -74,12 +74,13 @@ export async function POST(req: NextRequest) {
 
     // 1. Guardar archivo en Vercel Blob o Fallback Local
     let fileUrl = '';
-    const hasBlobToken = Boolean(process.env.BLOB_READ_WRITE_TOKEN && process.env.BLOB_READ_WRITE_TOKEN.trim() !== '');
+    const hasBlobToken = Boolean(process.env.BitCriolloBlob_READ_WRITE_TOKEN && process.env.BitCriolloBlob_READ_WRITE_TOKEN.trim() !== '');
 
     if (hasBlobToken) {
       try {
         const blob = await put(`articles/${Date.now()}-${file.name}`, file, {
           access: 'public',
+          token: process.env.BitCriolloBlob_READ_WRITE_TOKEN,
         });
         fileUrl = blob.url;
       } catch (blobErr) {
