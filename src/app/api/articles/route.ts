@@ -20,11 +20,15 @@ function getFallbackData() {
 }
 
 function saveFallbackData(data: any[]) {
-  const dir = path.dirname(FALLBACK_DB_PATH);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    const dir = path.dirname(FALLBACK_DB_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('No se pudo guardar la base de datos fallback en disco (sistema de archivos de solo lectura):', err);
   }
-  fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export async function GET() {
@@ -74,32 +78,41 @@ export async function POST(req: NextRequest) {
 
     // 1. Guardar archivo en Vercel Blob o Fallback Local
     let fileUrl = '';
-    const hasBlobToken = Boolean(process.env.BitCriolloBlob_READ_WRITE_TOKEN && process.env.BitCriolloBlob_READ_WRITE_TOKEN.trim() !== '');
+    const blobToken = process.env.BitCriolloBlob_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN;
+    const hasBlobToken = Boolean(blobToken && blobToken.trim() !== '');
 
     if (hasBlobToken) {
       try {
         const blob = await put(`articles/${Date.now()}-${file.name}`, file, {
           access: 'public',
-          token: process.env.BitCriolloBlob_READ_WRITE_TOKEN,
+          token: blobToken,
         });
         fileUrl = blob.url;
       } catch (blobErr) {
-        console.error('Error al subir a Vercel Blob, usando almacenamiento local:', blobErr);
+        console.error('Error al subir a Vercel Blob, intentando almacenamiento local:', blobErr);
       }
     }
 
-    // Si no se usó Blob o falló, guardar localmente en public/uploads/
+    // Si no se usó Blob o falló, intentar guardar localmente en public/uploads/
     if (!fileUrl) {
-      const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
+      try {
+        const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        const safeFilename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const filePath = path.join(uploadsDir, safeFilename);
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        fs.writeFileSync(filePath, buffer);
+        fileUrl = `/uploads/${safeFilename}`;
+      } catch (fsErr) {
+        console.error('Error de almacenamiento local (sistema de archivos de solo lectura en Vercel):', fsErr);
+        return NextResponse.json(
+          { error: 'No se pudo subir el archivo. En producción (Vercel), debes verificar la variable de entorno BitCriolloBlob_READ_WRITE_TOKEN o BLOB_READ_WRITE_TOKEN en tu Dashboard.' },
+          { status: 500 }
+        );
       }
-      const safeFilename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const filePath = path.join(uploadsDir, safeFilename);
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      fs.writeFileSync(filePath, buffer);
-      fileUrl = `/uploads/${safeFilename}`;
     }
 
     // 2. Guardar metadata en Base de Datos PostgreSQL o Fallback
