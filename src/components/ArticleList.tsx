@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Search, Download, History, FileText, User, Calendar, PlusCircle, Trash2, Loader2 } from 'lucide-react';
+import { Search, Download, History, FileText, User, Calendar, PlusCircle, Trash2, Loader2, Eye } from 'lucide-react';
 import VersionHistoryModal, { ArticleItem } from './VersionHistoryModal';
 import ConfirmModal from './ConfirmModal';
 
@@ -18,6 +18,19 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
   const [selectedArticleHistory, setSelectedArticleHistory] = useState<ArticleItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmArticle, setConfirmArticle] = useState<ArticleItem | null>(null);
+  const [previewItem, setPreviewItem] = useState<{ url: string; name: string } | null>(null);
+
+  const openPreview = (url: string, name: string, mimeType?: string | null) => {
+    const lowerUrl = url.toLowerCase();
+    const isPdf = lowerUrl.endsWith('.pdf') || mimeType === 'application/pdf';
+
+    if (isPdf) {
+      setPreviewItem({ url, name });
+      return;
+    }
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const handleDelete = async () => {
     if (!confirmArticle) return;
@@ -248,18 +261,29 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                     <span>Historial ({versionCount})</span>
                   </button>
 
-                  {/* Download latest version */}
+                  {/* Open and download latest version */}
                   {latestVer?.fileUrl ? (
-                    <a
-                      href={latestVer.fileUrl}
-                      download={latestVer.fileName}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-criollo-600 hover:bg-criollo-500 text-white rounded-xl text-xs font-medium shadow-md shadow-criollo-600/25 transition-all"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Descargar</span>
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openPreview(latestVer.fileUrl, latestVer.fileName, latestVer.mimeType)}
+                        className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition-all"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Ver</span>
+                      </button>
+
+                      <a
+                        href={latestVer.fileUrl}
+                        download={latestVer.fileName}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-criollo-600 hover:bg-criollo-500 text-white rounded-xl text-xs font-medium shadow-md shadow-criollo-600/25 transition-all"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Descargar</span>
+                      </a>
+                    </div>
                   ) : (
                     <span className="text-xs text-slate-500">Sin archivo</span>
                   )}
@@ -277,6 +301,32 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
         onClose={() => setSelectedArticleHistory(null)}
         onRefresh={onRefresh}
       />
+
+      {previewItem && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-5xl h-[85vh] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/80">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Vista previa</h3>
+                <p className="text-[11px] text-slate-400 truncate max-w-md">{previewItem.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewItem(null)}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+            <iframe
+              src={previewItem.url}
+              title={previewItem.name}
+              className="w-full h-full bg-white"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Confirm Delete Article Modal */}
       <ConfirmModal

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, History, Download, User, Calendar, FileText, CheckCircle2, Trash2 } from 'lucide-react';
+import { X, History, Download, User, Calendar, FileText, CheckCircle2, Trash2, Eye } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 
 export interface ArticleVersionItem {
@@ -35,6 +35,18 @@ export default function VersionHistoryModal({ article, onClose, onRefresh }: Ver
   const [versions, setVersions] = useState<ArticleVersionItem[]>(article?.versions || []);
   const [confirmTarget, setConfirmTarget] = useState<ArticleVersionItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [previewItem, setPreviewItem] = useState<{ url: string; name: string } | null>(null);
+
+  const openPreview = (ver: ArticleVersionItem) => {
+    const isPdf = (ver.fileUrl || '').toLowerCase().endsWith('.pdf') || ver.mimeType === 'application/pdf';
+
+    if (isPdf) {
+      setPreviewItem({ url: ver.fileUrl, name: ver.fileName });
+      return;
+    }
+
+    window.open(ver.fileUrl, '_blank', 'noopener,noreferrer');
+  };
 
   useEffect(() => {
     if (!article) return;
@@ -190,6 +202,19 @@ export default function VersionHistoryModal({ article, onClose, onRefresh }: Ver
 
                       {/* Actions */}
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openPreview(ver)}
+                          className={`inline-flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                            isLatest
+                              ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                              : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800'
+                          }`}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Ver</span>
+                        </button>
+
                         <a
                           href={ver.fileUrl}
                           download={ver.fileName}
@@ -233,6 +258,32 @@ export default function VersionHistoryModal({ article, onClose, onRefresh }: Ver
 
         </div>
       </div>
+
+      {previewItem && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-5xl h-[85vh] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/80">
+              <div>
+                <h3 className="text-sm font-semibold text-white">Vista previa</h3>
+                <p className="text-[11px] text-slate-400 truncate max-w-md">{previewItem.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewItem(null)}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+            <iframe
+              src={previewItem.url}
+              title={previewItem.name}
+              className="w-full h-full bg-white"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Confirm delete modal */}
       <ConfirmModal
