@@ -6,6 +6,21 @@ import { Search, Download, History, FileText, User, Calendar, PlusCircle, Trash2
 import VersionHistoryModal, { ArticleItem } from './VersionHistoryModal';
 import ConfirmModal from './ConfirmModal';
 
+const toSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+
+const buildArticlePath = (article: ArticleItem) => {
+  const version = article.versions?.[0]?.version || 'version';
+  const title = article.name || 'articulo';
+  return `${toSlug(version)}-${toSlug(title)}`;
+};
+
 interface ArticleListProps {
   articles: ArticleItem[];
   isLoading: boolean;
@@ -264,7 +279,7 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1">
-                      <Link href={`/articulos/${article.id}`} className="group/link inline-flex items-center gap-1.5 text-base font-bold text-slate-100 hover:text-criollo-300 transition-colors line-clamp-2">
+                      <Link href={`/articulos/${buildArticlePath(article)}`} className="group/link inline-flex items-center gap-1.5 text-base font-bold text-slate-100 hover:text-criollo-300 transition-colors line-clamp-2">
                         <span>{article.name}</span>
                         <ArrowUpRight className="w-3.5 h-3.5 opacity-70 group-hover/link:opacity-100 transition-opacity" />
                       </Link>
@@ -323,7 +338,7 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                     </button>
 
                     <Link
-                      href={`/articulos/${article.id}`}
+                      href={`/articulos/${buildArticlePath(article)}`}
                       className="flex items-center space-x-1.5 px-3 py-1.5 bg-criollo-500/10 hover:bg-criollo-500/20 text-criollo-300 border border-criollo-500/30 rounded-xl text-xs font-medium transition-all"
                     >
                       <Eye className="w-3.5 h-3.5" />

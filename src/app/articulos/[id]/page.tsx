@@ -3,9 +3,24 @@ import { notFound } from 'next/navigation';
 import { Download, ArrowLeft, FileText, Calendar, User, FolderOpen } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 
+const toSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+
+const buildArticlePath = (article: any) => {
+  const version = article.versions?.[0]?.version || 'version';
+  const title = article.name || 'articulo';
+  return `${toSlug(version)}-${toSlug(title)}`;
+};
+
 async function getArticle(id: string) {
   try {
-    const article = await prisma.article.findUnique({
+    const articleById = await prisma.article.findUnique({
       where: { id },
       include: {
         versions: {
@@ -14,7 +29,17 @@ async function getArticle(id: string) {
       },
     });
 
-    return article;
+    if (articleById) return articleById;
+
+    const articles = await prisma.article.findMany({
+      include: {
+        versions: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    return articles.find((article) => buildArticlePath(article) === id) || null;
   } catch (error) {
     console.error('Error al cargar el artículo:', error);
     return null;
