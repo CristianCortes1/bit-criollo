@@ -10,6 +10,7 @@ export interface ArticleVersionItem {
   fileName: string;
   fileSize?: number | null;
   mimeType?: string | null;
+  category?: string | null;
   version: string;
   author: string;
   createdAt: string;

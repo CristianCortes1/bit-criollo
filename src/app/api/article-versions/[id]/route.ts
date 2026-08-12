@@ -32,11 +32,34 @@ export async function DELETE(
       // Last version — delete the whole article (cascade deletes version too)
       await prisma.article.delete({ where: { id: version.articleId } });
       return NextResponse.json({ success: true, articleDeleted: true });
-    } else {
-      // More versions remain — delete only this version
-      await prisma.articleVersion.delete({ where: { id } });
-      return NextResponse.json({ success: true, articleDeleted: false });
     }
+
+    const remainingVersion = await prisma.articleVersion.findFirst({
+      where: {
+        articleId: version.articleId,
+        id: { not: id },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        category: true,
+      },
+    });
+
+    // More versions remain — delete only this version and keep the article category aligned
+    await prisma.articleVersion.delete({ where: { id } });
+
+    if (remainingVersion) {
+      await prisma.article.update({
+        where: { id: version.articleId },
+        data: {
+          category: remainingVersion.category ?? null,
+        },
+      });
+    }
+
+    return NextResponse.json({ success: true, articleDeleted: false });
   } catch (error: any) {
     console.error('Error al eliminar versión:', error);
     return NextResponse.json(

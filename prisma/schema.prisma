@@ -26,6 +26,7 @@ model ArticleVersion {
   fileName  String
   fileSize  Int?
   mimeType  String?
+  category  String?
   version   String
   author    String
   createdAt DateTime @default(now())

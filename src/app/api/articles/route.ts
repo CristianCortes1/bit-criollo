@@ -129,6 +129,16 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      const versionData = {
+        fileUrl,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        category: category ?? existingArticle?.category ?? null,
+        version: versionStr,
+        author,
+      };
+
       let article;
       if (existingArticle) {
         // Artículo existe: Se agrega una nueva versión
@@ -138,14 +148,7 @@ export async function POST(req: NextRequest) {
             updatedAt: new Date(),
             category: category ?? existingArticle.category,
             versions: {
-              create: {
-                fileUrl,
-                fileName: file.name,
-                fileSize: file.size,
-                mimeType: file.type,
-                version: versionStr,
-                author,
-              },
+              create: versionData,
             },
           },
           include: {
@@ -161,14 +164,7 @@ export async function POST(req: NextRequest) {
             name,
             category,
             versions: {
-              create: {
-                fileUrl,
-                fileName: file.name,
-                fileSize: file.size,
-                mimeType: file.type,
-                version: versionStr,
-                author,
-              },
+              create: versionData,
             },
           },
           include: {
@@ -195,6 +191,7 @@ export async function POST(req: NextRequest) {
         fileName: file.name,
         fileSize: file.size,
         mimeType: file.type,
+        category: category ?? articles[existingIndex]?.category ?? null,
         version: versionStr,
         author,
         createdAt: nowIso,
