@@ -6,19 +6,28 @@ import os from 'os';
 import path from 'path';
 
 // Helper de persistencia local en caso de que la DB PostgreSQL no esté conectada.
-// En Vercel/Next serverless, public/uploads es de solo lectura; por eso usamos /tmp.
+// En Vercel/Next serverless, public/uploads es de solo lectura; por eso usamos /tmp,
+// pero mantenemos compatibilidad con el archivo legacy en public/uploads para desarrollo local.
 const FALLBACK_DB_PATH = path.join(os.tmpdir(), 'bit-criollo-articles-fallback.json');
+const LEGACY_FALLBACK_DB_PATH = path.join(process.cwd(), 'public', 'uploads', 'articles_fallback.json');
 
 function getFallbackData() {
-  if (!fs.existsSync(FALLBACK_DB_PATH)) {
-    return [];
+  const candidatePaths = [FALLBACK_DB_PATH, LEGACY_FALLBACK_DB_PATH];
+
+  for (const candidatePath of candidatePaths) {
+    if (!fs.existsSync(candidatePath)) continue;
+
+    try {
+      const raw = fs.readFileSync(candidatePath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+      return [];
+    } catch {
+      // Intenta con la siguiente ruta si esta no es válida.
+    }
   }
-  try {
-    const raw = fs.readFileSync(FALLBACK_DB_PATH, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
+
+  return [];
 }
 
 function saveFallbackData(data: any[]) {
@@ -29,7 +38,17 @@ function saveFallbackData(data: any[]) {
     }
     fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {
-    console.error('No se pudo guardar la base de datos fallback en disco (sistema de archivos de solo lectura):', err);
+    console.error('No se pudo guardar la base de datos fallback en /tmp:', err);
+  }
+
+  try {
+    const dir = path.dirname(LEGACY_FALLBACK_DB_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(LEGACY_FALLBACK_DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  } catch {
+    // En producción / Vercel puede ser read-only; lo ignoramos para no romper la app.
   }
 }
 
@@ -49,11 +68,20 @@ export async function GET() {
       },
     });
 
+    if (articles.length > 0) {
+      return NextResponse.json(articles);
+    }
+
+    const fallbackArticles = getFallbackData();
+    if (fallbackArticles.length > 0) {
+      fallbackArticles.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      return NextResponse.json(fallbackArticles);
+    }
+
     return NextResponse.json(articles);
   } catch (dbError) {
     console.warn('PostgreSQL no disponible actualmente. Usando almacenamiento local de desarrollo:', dbError);
     const fallbackArticles = getFallbackData();
-    // Ordenar por actualización más reciente
     fallbackArticles.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     return NextResponse.json(fallbackArticles);
   }
