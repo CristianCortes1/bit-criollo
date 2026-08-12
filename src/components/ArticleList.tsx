@@ -59,7 +59,14 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
         }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { error: 'Respuesta vacía o no válida del servidor.' };
+      }
 
       if (!res.ok) {
         throw new Error(data.error || 'No se pudo guardar el artículo.');
@@ -84,10 +91,19 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
       if (res.ok) {
         setConfirmArticle(null);
         onRefresh();
-      } else {
-        const data = await res.json();
-        console.error(data.error || 'Error al eliminar el artículo.');
+        return;
       }
+
+      const text = await res.text();
+      let data: any = {};
+
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { error: 'Respuesta vacía o no válida del servidor.' };
+      }
+
+      console.error(data.error || 'Error al eliminar el artículo.');
     } catch (err) {
       console.error('Error al eliminar artículo:', err);
     } finally {
