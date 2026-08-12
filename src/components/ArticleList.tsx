@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Search, Download, History, FileText, User, Calendar, PlusCircle, Trash2, Loader2, Eye } from 'lucide-react';
+import { Search, Download, History, FileText, User, Calendar, PlusCircle, Trash2, Loader2, Eye, Pencil, Save, X } from 'lucide-react';
 import VersionHistoryModal, { ArticleItem } from './VersionHistoryModal';
 import ConfirmModal from './ConfirmModal';
 
@@ -19,6 +19,9 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmArticle, setConfirmArticle] = useState<ArticleItem | null>(null);
   const [previewItem, setPreviewItem] = useState<{ url: string; name: string } | null>(null);
+  const [editArticle, setEditArticle] = useState<ArticleItem | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', category: '' });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const openPreview = (url: string, name: string, mimeType?: string | null) => {
     const lowerUrl = url.toLowerCase();
@@ -30,6 +33,47 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
     }
 
     window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const openEditModal = (article: ArticleItem) => {
+    setEditArticle(article);
+    setEditForm({
+      name: article.name,
+      category: article.category ?? '',
+    });
+  };
+
+  const saveArticleEdit = async () => {
+    if (!editArticle) return;
+    if (!editForm.name.trim()) return;
+
+    setIsSavingEdit(true);
+
+    try {
+      const res = await fetch(`/api/articles/${editArticle.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editForm.name.trim(),
+          category: editForm.category.trim() || null,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'No se pudo guardar el artículo.');
+      }
+
+      setEditArticle(null);
+      setEditForm({ name: '', category: '' });
+      onRefresh();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'No se pudo actualizar el artículo.');
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -250,16 +294,25 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                 </div>
 
                 {/* Footer Actions */}
-                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                  
-                  {/* History button */}
-                  <button
-                    onClick={() => setSelectedArticleHistory(article)}
-                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-medium transition-all"
-                  >
-                    <History className="w-3.5 h-3.5 text-criollo-400" />
-                    <span>Historial ({versionCount})</span>
-                  </button>
+                <div className="pt-3 border-t border-slate-800/80 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => setSelectedArticleHistory(article)}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-medium transition-all"
+                    >
+                      <History className="w-3.5 h-3.5 text-criollo-400" />
+                      <span>Historial ({versionCount})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(article)}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition-all"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>Editar</span>
+                    </button>
+                  </div>
 
                   {/* Open and download latest version */}
                   {latestVer?.fileUrl ? (
@@ -267,7 +320,7 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                       <button
                         type="button"
                         onClick={() => openPreview(latestVer.fileUrl, latestVer.fileName, latestVer.mimeType)}
-                        className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition-all"
+                        className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition-all"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Ver</span>
@@ -278,14 +331,16 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                         download={latestVer.fileName}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-criollo-600 hover:bg-criollo-500 text-white rounded-xl text-xs font-medium shadow-md shadow-criollo-600/25 transition-all"
+                        className="flex-1 flex items-center justify-center space-x-1.5 px-3.5 py-1.5 bg-criollo-600 hover:bg-criollo-500 text-white rounded-xl text-xs font-medium shadow-md shadow-criollo-600/25 transition-all"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>Descargar</span>
                       </a>
                     </div>
                   ) : (
-                    <span className="text-xs text-slate-500">Sin archivo</span>
+                    <div className="flex items-center justify-center py-1.5 rounded-xl border border-slate-800 bg-slate-900/60 text-xs text-slate-500">
+                      Sin archivo
+                    </div>
                   )}
 
                 </div>
@@ -324,6 +379,72 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
               className="w-full h-full bg-white"
               loading="lazy"
             />
+          </div>
+        </div>
+      )}
+
+      {editArticle && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+              <div>
+                <h3 className="text-base font-bold text-white">Editar artículo</h3>
+                <p className="text-xs text-slate-400">Se actualiza sin crear una nueva versión.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditArticle(null)}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-criollo-500 focus:ring-1 focus:ring-criollo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Categoría o fase
+                </label>
+                <input
+                  type="text"
+                  value={editForm.category}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}
+                  placeholder="Ej. Planeación, Fase 1"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-criollo-500 focus:ring-1 focus:ring-criollo-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditArticle(null)}
+                  className="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={saveArticleEdit}
+                  disabled={isSavingEdit || !editForm.name.trim()}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-criollo-600 hover:bg-criollo-500 text-white text-sm font-medium rounded-xl transition-all disabled:opacity-60"
+                >
+                  {isSavingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>{isSavingEdit ? 'Guardando...' : 'Guardar'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
