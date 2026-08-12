@@ -167,7 +167,6 @@ export default function Home() {
 
           <div className="flex items-center space-x-1 text-slate-500">
             <span>Desarrollado para la Plataforma de Educación Virtual</span>
-            <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline mx-1" />
           </div>
         </div>
       </footer>

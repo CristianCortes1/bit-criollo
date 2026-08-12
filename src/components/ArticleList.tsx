@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Search, Download, History, FileText, User, Calendar, PlusCircle, Trash2, Loader2, Eye, Pencil, Save, X } from 'lucide-react';
+import { Search, Download, History, FileText, User, Calendar, PlusCircle, Trash2, Loader2, Eye, Pencil, Save, X, ArrowUpRight } from 'lucide-react';
 import VersionHistoryModal, { ArticleItem } from './VersionHistoryModal';
 import ConfirmModal from './ConfirmModal';
 
@@ -263,9 +264,10 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1">
-                      <h3 className="text-base font-bold text-slate-100 group-hover:text-criollo-300 transition-colors line-clamp-2">
-                        {article.name}
-                      </h3>
+                      <Link href={`/articulos/${article.id}`} className="group/link inline-flex items-center gap-1.5 text-base font-bold text-slate-100 hover:text-criollo-300 transition-colors line-clamp-2">
+                        <span>{article.name}</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 opacity-70 group-hover/link:opacity-100 transition-opacity" />
+                      </Link>
                       {article.category && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                           {article.category}
@@ -320,6 +322,14 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                       <span>Historial ({versionCount})</span>
                     </button>
 
+                    <Link
+                      href={`/articulos/${article.id}`}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-criollo-500/10 hover:bg-criollo-500/20 text-criollo-300 border border-criollo-500/30 rounded-xl text-xs font-medium transition-all"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Detalle</span>
+                    </Link>
+
                     <button
                       type="button"
                       onClick={() => openEditModal(article)}
@@ -330,30 +340,7 @@ export default function ArticleList({ articles, isLoading, onOpenUpload, onRefre
                     </button>
                   </div>
 
-                  {/* Open and download latest version */}
-                  {latestVer?.fileUrl ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openPreview(latestVer.fileUrl, latestVer.fileName, latestVer.mimeType)}
-                        className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition-all"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Ver</span>
-                      </button>
-
-                      <a
-                        href={latestVer.fileUrl}
-                        download={latestVer.fileName}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center space-x-1.5 px-3.5 py-1.5 bg-criollo-600 hover:bg-criollo-500 text-white rounded-xl text-xs font-medium shadow-md shadow-criollo-600/25 transition-all"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Descargar</span>
-                      </a>
-                    </div>
-                  ) : (
+                  {!latestVer?.fileUrl && (
                     <div className="flex items-center justify-center py-1.5 rounded-xl border border-slate-800 bg-slate-900/60 text-xs text-slate-500">
                       Sin archivo
                     </div>
