@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { put } from '@vercel/blob';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
-// Helper de persistencia local en caso de que la DB PostgreSQL no esté conectada aún en desarrollo local
-const FALLBACK_DB_PATH = path.join(process.cwd(), 'public', 'uploads', 'articles_fallback.json');
+// Helper de persistencia local en caso de que la DB PostgreSQL no esté conectada.
+// En Vercel/Next serverless, public/uploads es de solo lectura; por eso usamos /tmp.
+const FALLBACK_DB_PATH = path.join(os.tmpdir(), 'bit-criollo-articles-fallback.json');
 
 function getFallbackData() {
   if (!fs.existsSync(FALLBACK_DB_PATH)) {
