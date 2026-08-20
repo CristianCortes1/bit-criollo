@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, DragEvent, ChangeEvent, FormEvent } from 'react';
-import { Upload, X, FileText, CheckCircle2, AlertCircle, Loader2, Tag } from 'lucide-react';
+import { Upload, X, FileText, CheckCircle2, AlertCircle, Loader2, Image as ImageIcon, Eye } from 'lucide-react';
 
 interface TemplateUploadModalProps {
   isOpen: boolean;
@@ -17,44 +17,21 @@ export default function TemplateUploadModal({
   onSuccess,
 }: TemplateUploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Actas');
   const [customCategory, setCustomCategory] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [isDraggingPreview, setIsDraggingPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
-
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const droppedFile = e.dataTransfer.files[0];
-      setFile(droppedFile);
-      if (!name) {
-        const cleanName = droppedFile.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-        setName(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
-      }
-    }
-  };
 
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -67,6 +44,12 @@ export default function TemplateUploadModal({
     }
   };
 
+  const handlePreviewFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setPreviewFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -75,7 +58,7 @@ export default function TemplateUploadModal({
     const finalCategory = category === 'Otro' ? customCategory.trim() : category;
 
     if (!file) {
-      setErrorMsg('Por favor selecciona o arrastra un archivo (.docx, .pdf).');
+      setErrorMsg('Por favor selecciona el archivo de la plantilla (.docx).');
       return;
     }
     if (!name.trim()) {
@@ -92,6 +75,9 @@ export default function TemplateUploadModal({
     try {
       const formData = new FormData();
       formData.append('file', file);
+      if (previewFile) {
+        formData.append('previewFile', previewFile);
+      }
       formData.append('name', name.trim());
       formData.append('description', description.trim());
       formData.append('category', finalCategory);
@@ -111,6 +97,7 @@ export default function TemplateUploadModal({
 
       setTimeout(() => {
         setFile(null);
+        setPreviewFile(null);
         setName('');
         setDescription('');
         setCategory('Actas');
@@ -127,8 +114,8 @@ export default function TemplateUploadModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden glass-panel">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden glass-panel my-8">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/60">
@@ -138,7 +125,7 @@ export default function TemplateUploadModal({
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Subir Nueva Plantilla Oficial</h2>
-              <p className="text-xs text-slate-400">Formatos recomendados: .docx, .doc, .pdf</p>
+              <p className="text-xs text-slate-400">Adjunta la plantilla (.docx) y opcionalmente su vista previa (Imagen o PDF)</p>
             </div>
           </div>
           <button
@@ -152,49 +139,122 @@ export default function TemplateUploadModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           
-          {/* File Upload Dropzone */}
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`relative cursor-pointer border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 ${
-              isDragging
-                ? 'border-emerald-400 bg-emerald-950/40 scale-[0.99]'
-                : file
-                ? 'border-emerald-500/60 bg-emerald-950/20'
-                : 'border-slate-700/80 hover:border-emerald-500/50 hover:bg-slate-800/40'
-            }`}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-              accept=".docx,.doc,.pdf"
-              className="hidden"
-            />
+          {/* Dual File Upload Grids */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* 1. Main Document Dropzone (.docx) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                1. Archivo Plantilla (.docx) <span className="text-emerald-400">*</span>
+              </label>
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDraggingFile(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDraggingFile(false);
+                  if (e.dataTransfer.files?.[0]) {
+                    const f = e.dataTransfer.files[0];
+                    setFile(f);
+                    if (!name) {
+                      const cleanName = f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+                      setName(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
+                    }
+                  }
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                className={`relative cursor-pointer border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 min-h-[120px] flex items-center justify-center ${
+                  isDraggingFile
+                    ? 'border-emerald-400 bg-emerald-950/40'
+                    : file
+                    ? 'border-emerald-500/60 bg-emerald-950/20'
+                    : 'border-slate-700/80 hover:border-emerald-500/50 hover:bg-slate-800/40'
+                }`}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept=".docx,.doc"
+                  className="hidden"
+                />
 
-            {file ? (
-              <div className="flex items-center justify-center space-x-3 text-emerald-400">
-                <FileText className="w-8 h-8 flex-shrink-0" />
-                <div className="text-left overflow-hidden">
-                  <p className="text-sm font-semibold truncate text-slate-100">{file.name}</p>
-                  <p className="text-xs text-slate-400">
-                    {(file.size / (1024 * 1024)).toFixed(2)} MB • Haz clic o arrastra para cambiar
-                  </p>
-                </div>
+                {file ? (
+                  <div className="flex items-center space-x-2 text-emerald-400 overflow-hidden">
+                    <FileText className="w-6 h-6 flex-shrink-0" />
+                    <div className="text-left overflow-hidden">
+                      <p className="text-xs font-semibold truncate text-slate-100">{file.name}</p>
+                      <p className="text-[10px] text-slate-400">
+                        {(file.size / (1024 * 1024)).toFixed(2)} MB • Clic para cambiar
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <Upload className="w-5 h-5 mx-auto text-emerald-400" />
+                    <p className="text-xs font-medium text-slate-200">
+                      Subir archivo <span className="text-emerald-400 underline">.docx</span>
+                    </p>
+                    <p className="text-[10px] text-slate-400">Documento oficial</p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="w-12 h-12 mx-auto bg-slate-800/80 rounded-full flex items-center justify-center text-emerald-400 border border-slate-700">
-                  <Upload className="w-6 h-6" />
-                </div>
-                <p className="text-sm font-medium text-slate-200">
-                  Arrastra tu archivo aquí o <span className="text-emerald-400 underline">selecciónalo</span>
-                </p>
-                <p className="text-xs text-slate-400">Formatos: Word (.docx) o PDF</p>
+            </div>
+
+            {/* 2. Optional Preview File Dropzone (Image or PDF) */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                2. Vista Previa (Imagen o PDF) <span className="text-slate-500">(Opcional)</span>
+              </label>
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDraggingPreview(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDraggingPreview(false); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDraggingPreview(false);
+                  if (e.dataTransfer.files?.[0]) {
+                    setPreviewFile(e.dataTransfer.files[0]);
+                  }
+                }}
+                onClick={() => previewInputRef.current?.click()}
+                className={`relative cursor-pointer border-2 border-dashed rounded-xl p-4 text-center transition-all duration-200 min-h-[120px] flex items-center justify-center ${
+                  isDraggingPreview
+                    ? 'border-emerald-400 bg-emerald-950/40'
+                    : previewFile
+                    ? 'border-emerald-500/60 bg-emerald-950/20'
+                    : 'border-slate-700/80 hover:border-emerald-500/50 hover:bg-slate-800/40'
+                }`}
+              >
+                <input
+                  type="file"
+                  ref={previewInputRef}
+                  onChange={handlePreviewFileSelect}
+                  accept=".png,.jpg,.jpeg,.webp,.pdf"
+                  className="hidden"
+                />
+
+                {previewFile ? (
+                  <div className="flex items-center space-x-2 text-emerald-400 overflow-hidden">
+                    <ImageIcon className="w-6 h-6 flex-shrink-0" />
+                    <div className="text-left overflow-hidden">
+                      <p className="text-xs font-semibold truncate text-slate-100">{previewFile.name}</p>
+                      <p className="text-[10px] text-slate-400">
+                        {(previewFile.size / (1024 * 1024)).toFixed(2)} MB • Clic para cambiar
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <Eye className="w-5 h-5 mx-auto text-slate-400" />
+                    <p className="text-xs font-medium text-slate-300">
+                      Subir <span className="text-emerald-400 underline">Imagen o PDF</span>
+                    </p>
+                    <p className="text-[10px] text-slate-400">Para visualización previa</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+
           </div>
 
           {/* Form Fields */}

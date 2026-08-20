@@ -35,15 +35,17 @@ model ArticleVersion {
 }
 
 model Template {
-  id          String   @id @default(cuid())
-  name        String
-  description String
-  category    String
-  fileUrl     String
-  fileName    String?
-  fileSize    Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  category        String
+  fileUrl         String
+  fileName        String?
+  fileSize        Int?
+  previewUrl      String?
+  previewFileName String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("templates")
 }
