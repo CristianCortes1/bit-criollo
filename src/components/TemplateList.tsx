@@ -365,7 +365,7 @@ export default function TemplateList({
 
                       <a
                         href={downloadUrl}
-                        download={template.fileName || `${template.name}.docx`}
+                        download={template.fileName || `${template.name}`}
                         className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/25 transition-all"
                       >
                         <Download className="w-3.5 h-3.5" />

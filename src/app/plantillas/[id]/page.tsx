@@ -148,7 +148,7 @@ export default async function TemplateDetailPage({ params }: { params: { id: str
                     No hay una vista previa de imagen o PDF asignada a esta plantilla.
                   </p>
                   <p className="text-xs text-slate-400">
-                    Puedes descargar el documento oficial (.docx) directamente utilizando el botón lateral.
+                    Puedes descargar el documento oficial (.docx / .xlsx) directamente utilizando el botón lateral.
                   </p>
                 </div>
               )}
@@ -165,11 +165,11 @@ export default async function TemplateDetailPage({ params }: { params: { id: str
                 <div className="mt-4 space-y-3">
                   <a
                     href={template.fileUrl}
-                    download={template.fileName || `${template.name}.docx`}
+                    download={template.fileName || `${template.name}`}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500 shadow-lg shadow-emerald-600/30"
                   >
                     <Download className="w-4 h-4" />
-                    <span>Descargar plantilla (.docx)</span>
+                    <span>Descargar plantilla</span>
                   </a>
 
                   {displayPreviewUrl && (

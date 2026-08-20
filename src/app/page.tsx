@@ -84,7 +84,7 @@ export default function Home() {
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                   {activeTab === 'articles'
                     ? 'Gestión de Artículos & Control de Versiones'
-                    : 'Repositorio de Plantillas Oficiales (.docx)'}
+                    : 'Repositorio de Plantillas Oficiales (.docx, .xlsx)'}
                 </h2>
                 <p className="text-sm text-slate-300 leading-relaxed">
                   {activeTab === 'articles'

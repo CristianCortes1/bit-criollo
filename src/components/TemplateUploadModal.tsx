@@ -58,7 +58,7 @@ export default function TemplateUploadModal({
     const finalCategory = category === 'Otro' ? customCategory.trim() : category;
 
     if (!file) {
-      setErrorMsg('Por favor selecciona el archivo de la plantilla (.docx).');
+      setErrorMsg('Por favor selecciona el archivo de la plantilla (.docx, .xlsx).');
       return;
     }
     if (!name.trim()) {
@@ -125,7 +125,7 @@ export default function TemplateUploadModal({
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Subir Nueva Plantilla Oficial</h2>
-              <p className="text-xs text-slate-400">Adjunta la plantilla (.docx) y opcionalmente su vista previa (Imagen o PDF)</p>
+              <p className="text-xs text-slate-400">Adjunta la plantilla (.docx, .xlsx) y opcionalmente su vista previa (Imagen o PDF)</p>
             </div>
           </div>
           <button
@@ -142,10 +142,10 @@ export default function TemplateUploadModal({
           {/* Dual File Upload Grids */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
-            {/* 1. Main Document Dropzone (.docx) */}
+            {/* 1. Main Document Dropzone (.docx, .xlsx) */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                1. Archivo Plantilla (.docx) <span className="text-emerald-400">*</span>
+                1. Archivo Plantilla (.docx, .xlsx) <span className="text-emerald-400">*</span>
               </label>
               <div
                 onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
@@ -175,7 +175,7 @@ export default function TemplateUploadModal({
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileSelect}
-                  accept=".docx,.doc"
+                  accept=".docx,.doc,.xlsx,.xls,.csv"
                   className="hidden"
                 />
 
@@ -193,7 +193,7 @@ export default function TemplateUploadModal({
                   <div className="space-y-1">
                     <Upload className="w-5 h-5 mx-auto text-emerald-400" />
                     <p className="text-xs font-medium text-slate-200">
-                      Subir archivo <span className="text-emerald-400 underline">.docx</span>
+                      Subir <span className="text-emerald-400 underline">Word (.docx) o Excel (.xlsx)</span>
                     </p>
                     <p className="text-[10px] text-slate-400">Documento oficial</p>
                   </div>
