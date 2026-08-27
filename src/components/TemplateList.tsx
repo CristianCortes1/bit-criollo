@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState, MouseEvent } from 'react';
-import { Download, Search, FolderArchive, Tag, Trash2, PlusCircle, Loader2, Eye, Pencil, Save, X, ArrowUpRight } from 'lucide-react';
+import { Download, Search, FolderArchive, Tag, Trash2, PlusCircle, Loader2, Eye, Pencil, Save, X, ArrowUpRight, Layers } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 
 export interface TemplateItem {
@@ -10,6 +10,7 @@ export interface TemplateItem {
   name: string;
   description: string;
   category: string;
+  fase?: string;
   fileUrl?: string;
   fileName?: string;
   fileSize?: number;
@@ -49,12 +50,13 @@ export default function TemplateList({
 }: TemplateListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedPhase, setSelectedPhase] = useState<string>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmTemplate, setConfirmTemplate] = useState<TemplateItem | null>(null);
 
   // Edit Template State
   const [editTemplate, setEditTemplate] = useState<TemplateItem | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', category: '', description: '' });
+  const [editForm, setEditForm] = useState({ name: '', category: '', fase: '', description: '' });
   const [editPreviewFile, setEditPreviewFile] = useState<File | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
@@ -71,17 +73,35 @@ export default function TemplateList({
     return categories;
   }, [templates]);
 
+  // Dynamic Phase options list
+  const phaseOptions = useMemo(() => {
+    const phases = Array.from(
+      new Set(
+        templates
+          .map((t) => t.fase?.trim())
+          .filter((f): f is string => Boolean(f))
+      )
+    ).sort((a, b) => a.localeCompare(b, 'es'));
+
+    return phases;
+  }, [templates]);
+
   // Filter logic
   const filteredTemplates = templates.filter((t) => {
     const q = searchQuery.toLowerCase();
     const cat = t.category?.trim() || '';
+    const phase = t.fase?.trim() || '';
+
     const matchesCategory = selectedCategory === 'all' || cat === selectedCategory;
+    const matchesPhase = selectedPhase === 'all' || phase === selectedPhase;
+
     const matchesSearch =
       t.name.toLowerCase().includes(q) ||
       (t.description && t.description.toLowerCase().includes(q)) ||
-      (cat && cat.toLowerCase().includes(q));
+      (cat && cat.toLowerCase().includes(q)) ||
+      (phase && phase.toLowerCase().includes(q));
 
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesPhase && matchesSearch;
   });
 
   const openEditModal = (template: TemplateItem) => {
@@ -89,6 +109,7 @@ export default function TemplateList({
     setEditForm({
       name: template.name,
       category: template.category || '',
+      fase: template.fase || '',
       description: template.description || '',
     });
     setEditPreviewFile(null);
@@ -106,6 +127,7 @@ export default function TemplateList({
         const formData = new FormData();
         formData.append('name', editForm.name.trim());
         formData.append('category', editForm.category.trim() || 'General');
+        formData.append('fase', editForm.fase.trim());
         formData.append('description', editForm.description.trim());
         formData.append('previewFile', editPreviewFile);
 
@@ -120,6 +142,7 @@ export default function TemplateList({
           body: JSON.stringify({
             name: editForm.name.trim(),
             category: editForm.category.trim() || 'General',
+            fase: editForm.fase.trim(),
             description: editForm.description.trim(),
           }),
         });
@@ -138,7 +161,7 @@ export default function TemplateList({
       }
 
       setEditTemplate(null);
-      setEditForm({ name: '', category: '', description: '' });
+      setEditForm({ name: '', category: '', fase: '', description: '' });
       setEditPreviewFile(null);
       onRefresh();
     } catch (err: any) {
@@ -210,12 +233,12 @@ export default function TemplateList({
               />
             </div>
 
-            {/* Category Select & New Template Button */}
+            {/* Category & Phase Select & New Template Button */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto lg:justify-end">
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full sm:w-56 px-3.5 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full sm:w-48 px-3.5 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
               >
                 <option value="all">Todas las categorías</option>
                 {categoryOptions.map((cat) => (
@@ -225,9 +248,22 @@ export default function TemplateList({
                 ))}
               </select>
 
+              <select
+                value={selectedPhase}
+                onChange={(e) => setSelectedPhase(e.target.value)}
+                className="w-full sm:w-48 px-3.5 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+              >
+                <option value="all">Todas las fases</option>
+                {phaseOptions.map((phase) => (
+                  <option key={phase} value={phase}>
+                    {phase}
+                  </option>
+                ))}
+              </select>
+
               <button
                 onClick={onOpenUpload}
-                className="flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-semibold transition-all"
+                className="flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-semibold transition-all shrink-0"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
                 <span>Nueva Plantilla</span>
@@ -235,17 +271,20 @@ export default function TemplateList({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <span className="text-xs font-semibold text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
               {filteredTemplates.length} plantilla{filteredTemplates.length === 1 ? '' : 's'} disponible{filteredTemplates.length === 1 ? '' : 's'}
             </span>
-            {selectedCategory !== 'all' && (
+            {(selectedCategory !== 'all' || selectedPhase !== 'all') && (
               <button
                 type="button"
-                onClick={() => setSelectedCategory('all')}
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSelectedPhase('all');
+                }}
                 className="text-xs font-semibold text-slate-300 hover:text-white transition-colors"
               >
-                Limpiar filtro de categoría
+                Limpiar filtros
               </button>
             )}
           </div>
@@ -313,12 +352,20 @@ export default function TemplateList({
                           <ArrowUpRight className="w-3.5 h-3.5 opacity-70 group-hover/link:opacity-100 transition-opacity" />
                         </Link>
 
-                        {template.category && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                            <Tag className="w-3 h-3 mr-1" />
-                            {template.category}
-                          </span>
-                        )}
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {template.category && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                              <Tag className="w-3 h-3 mr-1" />
+                              {template.category}
+                            </span>
+                          )}
+                          {template.fase && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                              <Layers className="w-3 h-3 mr-1" />
+                              {template.fase}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <button
@@ -420,6 +467,19 @@ export default function TemplateList({
                     value={editForm.category}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))}
                     placeholder="Ej. Actas, Bitácoras"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Fase
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.fase}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, fase: e.target.value }))}
+                    placeholder="Ej. Fase 1, Planeación, Evaluación"
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>

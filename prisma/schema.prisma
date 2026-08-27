@@ -39,6 +39,7 @@ model Template {
   name            String
   description     String
   category        String
+  fase            String?
   fileUrl         String
   fileName        String?
   fileSize        Int?

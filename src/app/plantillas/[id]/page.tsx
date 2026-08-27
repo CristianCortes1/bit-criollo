@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Download, ArrowLeft, FolderArchive, Calendar, Tag, FileText, Eye } from 'lucide-react';
+import { Download, ArrowLeft, FolderArchive, Calendar, Tag, FileText, Eye, Layers } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 
 const toSlug = (value: string) =>
@@ -81,12 +81,20 @@ export default async function TemplateDetailPage({ params }: { params: { id: str
 
               <h1 className="text-2xl font-bold text-white sm:text-3xl">{template.name}</h1>
 
-              {template.category && (
-                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
-                  <Tag className="w-3.5 h-3.5" />
-                  <span>{template.category}</span>
-                </div>
-              )}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {template.category && (
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                    <Tag className="w-3.5 h-3.5" />
+                    <span>{template.category}</span>
+                  </div>
+                )}
+                {template.fase && (
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>{template.fase}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Description */}

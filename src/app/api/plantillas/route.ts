@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     const rawName = formData.get('name') as string | null;
     const rawDescription = formData.get('description') as string | null;
     const rawCategory = formData.get('category') as string | null;
+    const rawFase = formData.get('fase') as string | null;
 
     if (!file || !rawName || !rawCategory) {
       return NextResponse.json(
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
     const name = rawName.trim();
     const description = (rawDescription || '').trim();
     const category = rawCategory.trim();
+    const fase = rawFase ? rawFase.trim() : null;
 
     // 1. Guardar archivo principal (.docx)
     const fileUrl = await saveUploadedFile(file, 'plantillas');
@@ -103,6 +105,7 @@ export async function POST(req: NextRequest) {
         name,
         description,
         category,
+        fase,
         fileUrl,
         fileName: file.name,
         fileSize: file.size,

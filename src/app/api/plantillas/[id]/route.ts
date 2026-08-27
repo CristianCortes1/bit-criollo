@@ -55,6 +55,7 @@ export async function PUT(
     let name: string | undefined;
     let description: string | undefined;
     let category: string | undefined;
+    let fase: string | undefined | null;
     let newFile: File | null = null;
     let newPreviewFile: File | null = null;
 
@@ -63,6 +64,8 @@ export async function PUT(
       name = (formData.get('name') as string)?.trim();
       description = (formData.get('description') as string)?.trim();
       category = (formData.get('category') as string)?.trim();
+      const rawFase = formData.get('fase') as string | null;
+      fase = rawFase !== null ? rawFase.trim() : undefined;
       newFile = formData.get('file') as File | null;
       newPreviewFile = formData.get('previewFile') as File | null;
     } else {
@@ -70,6 +73,7 @@ export async function PUT(
       name = body.name?.trim();
       description = body.description?.trim();
       category = body.category?.trim();
+      fase = body.fase !== undefined ? (typeof body.fase === 'string' ? body.fase.trim() : null) : undefined;
     }
 
     if (!name) {
@@ -81,6 +85,10 @@ export async function PUT(
       description: description ?? '',
       category: category ?? 'General',
     };
+
+    if (fase !== undefined) {
+      updateData.fase = fase && fase.length > 0 ? fase : null;
+    }
 
     if (newFile && newFile.size > 0) {
       const fileUrl = await saveUploadedFile(newFile, 'plantillas');

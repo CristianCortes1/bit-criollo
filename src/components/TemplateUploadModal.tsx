@@ -22,6 +22,7 @@ export default function TemplateUploadModal({
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Actas');
   const [customCategory, setCustomCategory] = useState('');
+  const [fase, setFase] = useState('');
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [isDraggingPreview, setIsDraggingPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,6 +70,10 @@ export default function TemplateUploadModal({
       setErrorMsg('Selecciona o ingresa una categoría.');
       return;
     }
+    if (!fase.trim()) {
+      setErrorMsg('Ingresa la fase de la plantilla.');
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -81,6 +86,9 @@ export default function TemplateUploadModal({
       formData.append('name', name.trim());
       formData.append('description', description.trim());
       formData.append('category', finalCategory);
+      if (fase.trim()) {
+        formData.append('fase', fase.trim());
+      }
 
       const res = await fetch('/api/plantillas', {
         method: 'POST',
@@ -102,6 +110,7 @@ export default function TemplateUploadModal({
         setDescription('');
         setCategory('Actas');
         setCustomCategory('');
+        setFase('');
         setSuccessMsg(null);
         onSuccess();
         onClose();
@@ -303,6 +312,20 @@ export default function TemplateUploadModal({
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors mt-2"
                 />
               )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                Fase <span className="text-emerald-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={fase}
+                onChange={(e) => setFase(e.target.value)}
+                placeholder="Ej. Fase 1, Planeación, Evaluación"
+                required
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+              />
             </div>
 
             <div>
