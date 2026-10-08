@@ -7,6 +7,7 @@ interface TemplateUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  ciclo: number;
 }
 
 const DEFAULT_CATEGORIES = ['Actas', 'Bitácoras', 'Reportes', 'Arquitectura', 'Guías'];
@@ -15,6 +16,7 @@ export default function TemplateUploadModal({
   isOpen,
   onClose,
   onSuccess,
+  ciclo,
 }: TemplateUploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
@@ -86,6 +88,7 @@ export default function TemplateUploadModal({
       formData.append('name', name.trim());
       formData.append('description', description.trim());
       formData.append('category', finalCategory);
+      formData.append('ciclo', String(ciclo));
       if (fase.trim()) {
         formData.append('fase', fase.trim());
       }

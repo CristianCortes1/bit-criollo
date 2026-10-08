@@ -9,12 +9,14 @@ generator client {
 
 model Article {
   id        String           @id @default(cuid())
-  name      String           @unique
+  name      String
   category  String?
+  ciclo     Int              @default(1)
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   versions  ArticleVersion[]
 
+  @@unique([name, ciclo])
   @@map("articles")
 }
 
@@ -40,6 +42,7 @@ model Template {
   description     String
   category        String
   fase            String?
+  ciclo           Int      @default(1)
   fileUrl         String
   fileName        String?
   fileSize        Int?

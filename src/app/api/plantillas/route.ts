@@ -41,9 +41,15 @@ async function saveUploadedFile(file: File, folder: string) {
   return fileUrl;
 }
 
-export async function GET() {
+function parseCiclo(value: string | null): number {
+  return value === '2' ? 2 : 1;
+}
+
+export async function GET(req: NextRequest) {
+  const ciclo = parseCiclo(req.nextUrl.searchParams.get('ciclo'));
   try {
     const templates = await prisma.template.findMany({
+      where: { ciclo },
       orderBy: {
         updatedAt: 'desc',
       },
@@ -64,6 +70,7 @@ export async function POST(req: NextRequest) {
     const rawDescription = formData.get('description') as string | null;
     const rawCategory = formData.get('category') as string | null;
     const rawFase = formData.get('fase') as string | null;
+    const ciclo = parseCiclo(formData.get('ciclo') as string | null);
 
     if (!file || !rawName || !rawCategory) {
       return NextResponse.json(
@@ -106,6 +113,7 @@ export async function POST(req: NextRequest) {
         description,
         category,
         fase,
+        ciclo,
         fileUrl,
         fileName: file.name,
         fileSize: file.size,

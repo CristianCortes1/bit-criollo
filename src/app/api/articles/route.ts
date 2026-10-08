@@ -52,10 +52,18 @@ function saveFallbackData(data: any[]) {
   }
 }
 
-export async function GET() {
+function parseCiclo(value: string | null): number {
+  return value === '2' ? 2 : 1;
+}
+
+export async function GET(req: NextRequest) {
+  const ciclo = parseCiclo(req.nextUrl.searchParams.get('ciclo'));
+  const byCiclo = (a: any) => (a.ciclo ?? 1) === ciclo;
+
   try {
     // Intentar consulta a base de datos PostgreSQL via Prisma
     const articles = await prisma.article.findMany({
+      where: { ciclo },
       include: {
         versions: {
           orderBy: {
@@ -72,7 +80,7 @@ export async function GET() {
       return NextResponse.json(articles);
     }
 
-    const fallbackArticles = getFallbackData();
+    const fallbackArticles = getFallbackData().filter(byCiclo);
     if (fallbackArticles.length > 0) {
       fallbackArticles.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       return NextResponse.json(fallbackArticles);
@@ -81,7 +89,7 @@ export async function GET() {
     return NextResponse.json(articles);
   } catch (dbError) {
     console.warn('PostgreSQL no disponible actualmente. Usando almacenamiento local de desarrollo:', dbError);
-    const fallbackArticles = getFallbackData();
+    const fallbackArticles = getFallbackData().filter(byCiclo);
     fallbackArticles.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     return NextResponse.json(fallbackArticles);
   }
@@ -95,6 +103,7 @@ export async function POST(req: NextRequest) {
     const rawCategory = formData.get('category') as string | null;
     const rawVersion = formData.get('version') as string | null;
     const rawAuthor = formData.get('author') as string | null;
+    const ciclo = parseCiclo(formData.get('ciclo') as string | null);
 
     if (!file || !rawName || !rawVersion || !rawAuthor) {
       return NextResponse.json(
@@ -152,6 +161,7 @@ export async function POST(req: NextRequest) {
       // Buscar si el artículo ya existe (búsqueda insensible a mayúsculas/minúsculas)
       const existingArticle = await prisma.article.findFirst({
         where: {
+          ciclo,
           name: {
             equals: name,
             mode: 'insensitive',
@@ -193,6 +203,7 @@ export async function POST(req: NextRequest) {
           data: {
             name,
             category,
+            ciclo,
             versions: {
               create: versionData,
             },
@@ -211,7 +222,7 @@ export async function POST(req: NextRequest) {
 
       const articles = getFallbackData();
       const existingIndex = articles.findIndex(
-        (a: any) => a.name.toLowerCase() === name.toLowerCase()
+        (a: any) => a.name.toLowerCase() === name.toLowerCase() && (a.ciclo ?? 1) === ciclo
       );
 
       const nowIso = new Date().toISOString();
@@ -238,6 +249,7 @@ export async function POST(req: NextRequest) {
           id: `art-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           name,
           category,
+          ciclo,
           createdAt: nowIso,
           updatedAt: nowIso,
           versions: [newVersionObj],

@@ -53,8 +53,11 @@ export async function PUT(
       return NextResponse.json({ error: 'El nombre del artículo es obligatorio.' }, { status: 400 });
     }
 
+    const current = await prisma.article.findUnique({ where: { id }, select: { ciclo: true } });
+
     const articleExists = await prisma.article.findFirst({
       where: {
+        ciclo: current?.ciclo ?? 1,
         name: {
           equals: name,
           mode: 'insensitive',

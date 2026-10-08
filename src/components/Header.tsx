@@ -1,9 +1,11 @@
 'use client';
 
 import Image from 'next/image';
-import { FileText, FolderArchive, PlusCircle, Sparkles } from 'lucide-react';
+import { FileText, FolderArchive, PlusCircle, Sparkles, Layers } from 'lucide-react';
 
 interface HeaderProps {
+  ciclo: 1 | 2;
+  setCiclo: (ciclo: 1 | 2) => void;
   activeTab: 'articles' | 'templates';
   setActiveTab: (tab: 'articles' | 'templates') => void;
   onOpenUpload: () => void;
@@ -11,6 +13,8 @@ interface HeaderProps {
 }
 
 export default function Header({
+  ciclo,
+  setCiclo,
   activeTab,
   setActiveTab,
   onOpenUpload,
@@ -57,6 +61,24 @@ export default function Header({
           {/* Navigation Tabs & Actions */}
           <div className="flex items-center justify-between md:justify-end gap-3 flex-wrap">
             
+            {/* Ciclo selector */}
+            <div className="bg-slate-900/90 p-1 rounded-xl border border-slate-800 flex items-center space-x-1">
+              {([1, 2] as const).map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCiclo(c)}
+                  className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    ciclo === c
+                      ? 'bg-slate-700 text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  }`}
+                >
+                  <Layers className="w-4 h-4" />
+                  <span>Ciclo {c}</span>
+                </button>
+              ))}
+            </div>
+
             {/* Tabs */}
             <div className="bg-slate-900/90 p-1 rounded-xl border border-slate-800 flex items-center space-x-1">
               <button

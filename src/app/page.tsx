@@ -10,6 +10,8 @@ import { ArticleItem } from '@/components/VersionHistoryModal';
 import { FileText, FolderArchive, Layers, Heart } from 'lucide-react';
 
 export default function Home() {
+  const [ciclo, setCicloState] = useState<1 | 2>(1);
+  const [cicloReady, setCicloReady] = useState(false);
   const [activeTab, setActiveTab] = useState<'articles' | 'templates'>('articles');
   const [isArticleUploadOpen, setIsArticleUploadOpen] = useState(false);
   const [isTemplateUploadOpen, setIsTemplateUploadOpen] = useState(false);
@@ -23,7 +25,7 @@ export default function Home() {
   const fetchArticles = async () => {
     setIsLoadingArticles(true);
     try {
-      const res = await fetch('/api/articles');
+      const res = await fetch(`/api/articles?ciclo=${ciclo}`);
       if (res.ok) {
         const data = await res.json();
         setArticles(data);
@@ -38,7 +40,7 @@ export default function Home() {
   const fetchTemplates = async () => {
     setIsLoadingTemplates(true);
     try {
-      const res = await fetch('/api/plantillas');
+      const res = await fetch(`/api/plantillas?ciclo=${ciclo}`);
       if (res.ok) {
         const data = await res.json();
         setTemplates(data);
@@ -50,10 +52,32 @@ export default function Home() {
     }
   };
 
+  const readCicloFromUrl = (): 1 | 2 =>
+    new URLSearchParams(window.location.search).get('ciclo') === '2' ? 2 : 1;
+
+  // Sincroniza el ciclo con la URL (?ciclo=2): lectura inicial, botones atrás/adelante y cambios manuales.
   useEffect(() => {
+    setCicloState(readCicloFromUrl());
+    setCicloReady(true);
+    const onPop = () => setCicloState(readCicloFromUrl());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const setCiclo = (next: 1 | 2) => {
+    setCicloState(next);
+    const url = new URL(window.location.href);
+    if (next === 1) url.searchParams.delete('ciclo');
+    else url.searchParams.set('ciclo', String(next));
+    window.history.pushState(null, '', url.pathname + url.search + url.hash);
+  };
+
+  useEffect(() => {
+    if (!cicloReady) return;
     fetchArticles();
     fetchTemplates();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ciclo, cicloReady]);
 
   const existingArticleNames = articles.map((a) => a.name);
 
@@ -62,6 +86,8 @@ export default function Home() {
       <div>
         {/* Navbar */}
         <Header
+          ciclo={ciclo}
+          setCiclo={setCiclo}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           onOpenUpload={() => setIsArticleUploadOpen(true)}
@@ -79,7 +105,7 @@ export default function Home() {
               <div className="space-y-2 max-w-2xl">
                 <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold bg-criollo-500/10 text-criollo-400 border border-criollo-500/20">
                   <Layers className="w-3.5 h-3.5" />
-                  <span>Bit Criollo Docs Hub</span>
+                  <span>Bit Criollo Docs Hub · Ciclo {ciclo}</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                   {activeTab === 'articles'
@@ -149,12 +175,14 @@ export default function Home() {
         onClose={() => setIsArticleUploadOpen(false)}
         onSuccess={fetchArticles}
         existingArticleNames={existingArticleNames}
+        ciclo={ciclo}
       />
 
       <TemplateUploadModal
         isOpen={isTemplateUploadOpen}
         onClose={() => setIsTemplateUploadOpen(false)}
         onSuccess={fetchTemplates}
+        ciclo={ciclo}
       />
 
       {/* Footer */}

@@ -8,6 +8,7 @@ interface ArticleUploadModalProps {
   onClose: () => void;
   onSuccess: () => void;
   existingArticleNames?: string[];
+  ciclo: number;
 }
 
 export default function ArticleUploadModal({
@@ -15,6 +16,7 @@ export default function ArticleUploadModal({
   onClose,
   onSuccess,
   existingArticleNames = [],
+  ciclo,
 }: ArticleUploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState('');
@@ -108,6 +110,7 @@ export default function ArticleUploadModal({
       formData.append('category', category.trim());
       formData.append('version', version.trim());
       formData.append('author', author.trim());
+      formData.append('ciclo', String(ciclo));
 
       const res = await fetch('/api/articles', {
         method: 'POST',
