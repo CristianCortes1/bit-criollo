@@ -15,7 +15,8 @@ const toSlug = (value: string) =>
 const buildTemplatePath = (template: any) => {
   const category = template.category || 'plantilla';
   const title = template.name || 'documento';
-  return `${toSlug(category)}-${toSlug(title)}`;
+  const prefix = template.ciclo === 2 ? 'ciclo-2-' : '';
+  return `${prefix}${toSlug(category)}-${toSlug(title)}`;
 };
 
 async function getTemplate(id: string) {
@@ -26,7 +27,9 @@ async function getTemplate(id: string) {
 
     if (templateById) return templateById;
 
-    const templates = await prisma.template.findMany();
+    // El prefijo "ciclo-2-" del slug indica a qué ciclo pertenece; sin prefijo es Ciclo 1.
+    const ciclo = id.startsWith('ciclo-2-') ? 2 : 1;
+    const templates = await prisma.template.findMany({ where: { ciclo } });
     return templates.find((template) => buildTemplatePath(template) === id || template.id === id) || null;
   } catch (error) {
     console.error('Error al cargar la plantilla:', error);
@@ -60,7 +63,7 @@ export default async function TemplateDetailPage({ params }: { params: { id: str
         {/* Navigation back link */}
         <div className="mb-6">
           <Link
-            href="/"
+            href={template.ciclo === 2 ? '/?ciclo=2' : '/'}
             className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-emerald-400" />

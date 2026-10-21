@@ -20,6 +20,7 @@ export interface ArticleItem {
   id: string;
   name: string;
   category?: string | null;
+  ciclo?: number;
   createdAt: string;
   updatedAt: string;
   versions: ArticleVersionItem[];

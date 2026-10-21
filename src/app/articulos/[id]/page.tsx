@@ -15,7 +15,8 @@ const toSlug = (value: string) =>
 const buildArticlePath = (article: any) => {
   const version = article.versions?.[0]?.version || 'version';
   const title = article.name || 'articulo';
-  return `${toSlug(version)}-${toSlug(title)}`;
+  const prefix = article.ciclo === 2 ? 'ciclo-2-' : '';
+  return `${prefix}${toSlug(version)}-${toSlug(title)}`;
 };
 
 async function getArticle(id: string) {
@@ -31,7 +32,10 @@ async function getArticle(id: string) {
 
     if (articleById) return articleById;
 
+    // El prefijo "ciclo-2-" del slug indica a qué ciclo pertenece; sin prefijo es Ciclo 1.
+    const ciclo = id.startsWith('ciclo-2-') ? 2 : 1;
     const articles = await prisma.article.findMany({
+      where: { ciclo },
       include: {
         versions: {
           orderBy: { createdAt: 'desc' },
@@ -70,7 +74,7 @@ export default async function ArticleDetailPage({ params }: { params: { id: stri
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6">
           <Link
-            href="/"
+            href={article.ciclo === 2 ? '/?ciclo=2' : '/'}
             className="inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

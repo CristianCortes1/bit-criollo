@@ -11,6 +11,7 @@ export interface TemplateItem {
   description: string;
   category: string;
   fase?: string;
+  ciclo?: number;
   fileUrl?: string;
   fileName?: string;
   fileSize?: number;
@@ -39,7 +40,8 @@ const toSlug = (value: string) =>
 const buildTemplatePath = (template: TemplateItem) => {
   const category = template.category || 'plantilla';
   const title = template.name || 'documento';
-  return `${toSlug(category)}-${toSlug(title)}`;
+  const prefix = template.ciclo === 2 ? 'ciclo-2-' : '';
+  return `${prefix}${toSlug(category)}-${toSlug(title)}`;
 };
 
 export default function TemplateList({

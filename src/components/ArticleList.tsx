@@ -18,7 +18,8 @@ const toSlug = (value: string) =>
 const buildArticlePath = (article: ArticleItem) => {
   const version = article.versions?.[0]?.version || 'version';
   const title = article.name || 'articulo';
-  return `${toSlug(version)}-${toSlug(title)}`;
+  const prefix = article.ciclo === 2 ? 'ciclo-2-' : '';
+  return `${prefix}${toSlug(version)}-${toSlug(title)}`;
 };
 
 interface ArticleListProps {
